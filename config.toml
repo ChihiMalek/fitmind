@@ -1,5 +1,4 @@
 [global]
-# Désactiver UV pour éviter les conflits sur Streamlit Cloud
 disableUVLoop = true
 
 [server]
