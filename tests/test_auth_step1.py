@@ -212,14 +212,21 @@ class TestAuthConfig:
 
     def test_no_streamlit_or_sqlite_import_in_auth_package(self):
         """
-        Garde-fou explicite de l'Etape 1 : aucun fichier de auth/ ne doit
-        importer streamlit ni sqlite3.
+        Garde-fou de l'Etape 1, mis a jour a l'Etape 3 : auth/session_manager.py
+        est desormais le seul fichier explicitement autorise a importer
+        streamlit (c'est son role — voir ARCHITECTURE_AUTH_v1.md §2 et
+        tests/test_auth_step3.py::TestArchitectureConstraints). Tous les
+        AUTRES fichiers de auth/ restent interdits d'importer streamlit ou
+        sqlite3, y compris session_manager.py pour sqlite3 specifiquement.
         """
         auth_dir = Path(__file__).resolve().parent.parent / "auth"
-        forbidden = re.compile(r"^\s*(import|from)\s+(streamlit|sqlite3)\b", re.MULTILINE)
+        forbidden_sqlite3 = re.compile(r"^\s*(import|from)\s+sqlite3\b", re.MULTILINE)
+        forbidden_streamlit = re.compile(r"^\s*(import|from)\s+streamlit\b", re.MULTILINE)
         offending = []
         for py_file in auth_dir.glob("*.py"):
             content = py_file.read_text(encoding="utf-8")
-            if forbidden.search(content):
-                offending.append(py_file.name)
+            if forbidden_sqlite3.search(content):
+                offending.append(f"{py_file.name} (sqlite3)")
+            if py_file.name != "session_manager.py" and forbidden_streamlit.search(content):
+                offending.append(f"{py_file.name} (streamlit)")
         assert offending == [], f"Dependance interdite trouvee dans : {offending}"
